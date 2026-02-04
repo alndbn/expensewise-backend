@@ -1,10 +1,13 @@
 from flask import Flask #anfragen aus dem internet verstehen
 from models import db #verbindung zum datenbank-bauplan in models.py
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__) #start engine
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///expensewise.db' #datenbank ist sqllite datei 
-#und soll expensewise.db heißen
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False #SQLAlchemy Überwachungssystem ausschalten
 
 db.init_app(app) #Datenbank wird mit App verbunden
