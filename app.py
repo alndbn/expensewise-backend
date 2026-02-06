@@ -2,22 +2,28 @@ from flask import Flask, request, jsonify, render_template #anfragen aus dem int
 from models import db, User, Expense #verbindung zum datenbank-bauplan in models.py
 import os
 from dotenv import load_dotenv
+from service.data_manager import DataManager
+
 
 load_dotenv()
 
+
 app = Flask(__name__) #start engine
+
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False #SQLAlchemy Überwachungssystem ausschalten
 
+
 db.init_app(app) #Datenbank wird mit App verbunden
+
 
 with app.app_context():
     db.create_all() #app schaut in models.py und baut User und Expense Tabellen
 
 
 
-#---------------Table User--------------
+#-----------------------------Table User------------------------
 
 @app.route('/') #ruft jemand die website mit / auf, wird die Funktion ausgeführt
 def index():
@@ -28,21 +34,15 @@ def index():
 @app.route('/users', methods=['POST'])
 def create_user():
     data = request.get_json() #json daten aus Postman Anfrage holen
-    #guckt, ob der Nutzer schon existiert:
-    existing_user = User.query.filter_by(email=data['email']).first()
-    if existing_user:
-        return jsonify({"error": "A user with this mail address already exists."})
+    
+    #übergeben Arbeit an data_manager
+    user, error = DataManager.create_user(data['username']. data['email'])
 
-    #neuen nutzer anlegen:
-    new_user = User(username=data['username'], email=data['email']) 
-
-    try:
-        db.session.add(new_user) #in die neon cloud adden
-        db.session.commit()
-        return jsonify({"message": "User successful created", "id": new_user.id}), 201 
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+    if error:
+        return jsonify({"error": error}), 400 #falls es user nicht gibt
+    
+    #wenn alles klappt, wird ID des neues Users zurückgegeben
+    return jsonify({"message": "User created", "id": user.id}), 201
 
 
 @app.route('/users', methods=['GET'])
@@ -88,27 +88,26 @@ def update_user(user_id):
 
 @app.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
-    #1. den nutzer in der datenbank suchen
-    user = db.session.get(User, user_id)
+    #app.py fragt Manager: "Lösch mal bitte User X"
+    success, error = DataManager.delete_user(user_id)
 
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    if not success:
+        return jsonify({"error": error}), 404
     
-    #2. den nutzer aus der session entfernen
-    db.session.delete(user)
-    #3. die änderungen in neon speichern
-    db.session.commit()
-    return jsonify({"message": f"User {user_id} succesfful deleted."}), 200
+    return jsonify({"message": f"User {user_id} successfully deleted."}), 200
 
 
-#--------------table expense----------------
+
+
+
+#----------------------------table expense----------------
 
 @app.route('/expenses', methods=['POST'])
 def create_expense():
     data = request.get_json()
 
     #neues objekt erstellen:
-    new_expense= Expense (
+    expense, error = DataManager.create_expense(
         title=data['title'],
         amount=data['amount'],
         description=data.get('description'),
@@ -116,10 +115,10 @@ def create_expense():
         user_id=data['user_id']
     )
 
-    db.session.add(new_expense)
-    db.session.commit()
-
-    return jsonify({"message": "Expense safed", "id": new_expense.id}), 201
+    if error:
+        return jsonify({"error": error}), 400
+    
+    return jsonify({"message": "Expense saved", "id": expense.id}), 201
 
 
 @app.route('/expenses/user/<int:user_id>', methods=['GET'])
@@ -140,19 +139,14 @@ def get_expenses_by_user(user_id):
 
 @app.route('/expenses/<int:expense_id>', methods=['PUT'])
 def update_expense(expense_id):
-    expense = db.session.get(Expense, expense_id)
-    if not expense:
-        return jsonify({"error": "Couldn't find expense"}), 404
-    
-    data = request.get_json()
-    # Wir aktualisieren nur die Felder, die im JSON geschickt wurden
-    if 'title' in data: expense.title = data['title']
-    if 'amount' in data: expense.amount = data['amount']
-    if 'category' in data: expense.category = data['category']
-    if 'description' in data: expense.description = data['description']
+    data = request.get_json() #daten aus postman holen
 
-    db.session.commit()
-    return jsonify({"message": "Expense updated"}), 200
+    expense, error = DataManager.update_expense(expense_id, data)
+
+    if error:
+        return jsonify({"error": error}), 404
+    
+    return jsonify({"message": "Updated successfully."}), 200
 
 
 @app.route('/expenses/<int:expense_id>', methods=['DELETE'])
