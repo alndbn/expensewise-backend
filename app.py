@@ -36,7 +36,7 @@ def create_user():
     data = request.get_json() #json daten aus Postman Anfrage holen
     
     #übergeben Arbeit an data_manager
-    user, error = DataManager.create_user(data['username']. data['email'])
+    user, error = DataManager.create_user(data['username'], data['email'])
 
     if error:
         return jsonify({"error": error}), 400 #falls es user nicht gibt

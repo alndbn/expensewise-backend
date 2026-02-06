@@ -93,7 +93,7 @@ class DataManager:
         if 'category' in data:
             expense.category = data['category']
         if 'description' in data:
-            expense.description = data['discription']
+            expense.description = data['description']
         
         try:
             db.session.commit() #alles speichern
