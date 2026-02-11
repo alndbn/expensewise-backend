@@ -1,24 +1,29 @@
 from models import db, User, Expense
+from werkzeug.security import generate_password_hash
 
 #---------------------User------------------
 
 class DataManager:
-    @staticmethod # @staticmethod bedeutet: Ich kann die Funktion direkt über DataManager.create_user() aufrufen
-    def create_user(username, email):
-        # 1. Prüfen, ob die Email schon da ist (Datenbank-Abfrage)
+    @staticmethod
+    def create_user(username, email, password):
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
-            return None, "User exists"
+            return None, "User already exists"
 
-        #2. neues Objekt erstellen
-        new_user = User(username=username, email=email)
+        password_hash = generate_password_hash(password)
+
+        new_user = User(
+            username=username,
+            email=email,
+            password_hash=password_hash
+        )
 
         try:
-            db.session.add(new_user) #vorbereiten
-            db.session.commit() #speichern
-            return new_user, None #erstellt
+            db.session.add(new_user)
+            db.session.commit()
+            return new_user, None
         except Exception as e:
-            db.session.rollback() #bei fehler alles rückgängig machen
+            db.session.rollback()
             return None, str(e)
 
 
@@ -44,15 +49,24 @@ class DataManager:
 #---------------------Expense--------------------
 
     @staticmethod
-    def create_expense(title, amount, user_id, description=None, category=None):
-        #neues Ausgabenobjekt bauen
+    def create_expense(data): # Wir nehmen nur noch das Paket 'data' an
+    # 1. Schritt: Validierung 
+        if not data.get('title') or data.get('amount') is None:
+            return None, "Title and Amount are mandatory fields!"
+
+        category_input = data.get('category')
+        if not category_input or category_input.strip() == "":
+            category_input = "Other"
+
+        # 2. Schritt: Das Objekt bauen
         new_exp = Expense(
-            title=title,
-            amount=amount,
-            user_id=user_id,
-            description=description,
-            category=category
+            title=data.get('title'),
+            amount=data.get('amount'),
+            user_id = data.get('user_id'),
+            description=data.get('description'),
+            category=category_input
         )
+
         try:
             db.session.add(new_exp)
             db.session.commit()
@@ -60,7 +74,8 @@ class DataManager:
         except Exception as e:
             db.session.rollback()
             return None, str(e)
-    
+        
+
     @staticmethod
     def delete_expense(expense_id):
         #die einzelnen Ausgaben suchen
