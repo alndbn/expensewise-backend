@@ -10,9 +10,14 @@ load_dotenv()
 
 
 app = Flask(__name__) #start engine
-CORS(app) #postman zugriff auf forbidden Fehler geben
+
+# erlauben explizit dem React-Frontend den Zugriff
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "pool_pre_ping": True,
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False #SQLAlchemy Überwachungssystem ausschalten
 
 
@@ -100,20 +105,28 @@ def delete_user(user_id):
 
 @app.route('/register', methods=['POST'])
 def register():
+    #holen uns die JSON-Daten aus dem "Paket", das React geschickt hat
     data = request.get_json()
-
+    #check: prüfen, ob alle drei Felder (Username, Email, Passwort) 
+    # im Paket enthalten sind. Wenn eines fehlt, brechen wir sofort ab.
     if not data.get("username") or not data.get("email") or not data.get("password"):
+        #400: client hat was falsch gemacht
         return jsonify({"error": "Username, email and password are required"}), 400
-
+    
+    #schicken die Daten an 'DataManager'. 
+    #kümmert sich darum, den User in der Neon-Datenbank anzulegen
     user, error = DataManager.create_user(
         data["username"],
         data["email"],
         data["password"]
     )
-
+    #falls der DataManager einen Fehler meldet (z.B. Email existiert schon),
+    #schicken wir diesen Fehler direkt zurück an das Frontend.
     if error:
         return jsonify({"error": error}), 400
 
+    #wenn erfolg: schicken eine Bestätigung zurück
+    # 201 Created' - etwas Neues wurde erfolgreich erschaffen
     return jsonify({
         "message": "User registered successfully",
         "id": user.id,
@@ -268,7 +281,8 @@ def get_expense_summary(user_id):
             category_totals[cat] += amount
         else:
             # Kategorie ist neu -> anlegen
-            category_totals[cat] = amount
+            category_totals[cat] = amount #auf die Kategorie cat im Dictionary category_totals zugreifen und
+            #den Betrag addieren
 
     return jsonify({
         "total_amount": total_expenses,
