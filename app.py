@@ -4,9 +4,11 @@ from models import db, User, Expense #verbindung zum datenbank-bauplan in models
 import os
 from dotenv import load_dotenv
 from service.data_manager import DataManager
+#from flask_jwt_extended import create_access_token, JWTManager
 
 
-load_dotenv()
+load_dotenv() #lädt Variablen aus einer Textdatei mit dem Namen .env, brauche die Verbimdung
+#zur datenbank, möchte das Passwort aber nicht in Quelltext schreiben
 
 
 app = Flask(__name__) #start engine
@@ -19,8 +21,9 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     "pool_pre_ping": True,
 }
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False #SQLAlchemy Überwachungssystem ausschalten
+app.config["JWT_SECRET_KEY"] = "super-secret" 
 
-
+#jwt = JWTManager(app)
 db.init_app(app) #Datenbank wird mit App verbunden
 
 
@@ -145,11 +148,13 @@ def login():
 
     # Passwort prüfen
     if user and user.check_password(data.get('password')):
+        #access_token = create_access_token(identity=user.username)
         return jsonify({
             "message": "Login successful",
             "user": {
                 "id": user.id,
-                "username": user.username
+                "username": user.username,
+                #"access_token": access_token
             }
         }), 200
     
