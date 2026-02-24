@@ -1,5 +1,8 @@
 from models import db, User, Expense
 from werkzeug.security import generate_password_hash
+import jwt
+from datetime import datetime, timedelta
+import os
 
 #---------------------User------------------
 
@@ -45,6 +48,24 @@ class DataManager:
             db.session.rollback()
             return False, str(e)
         
+
+    @staticmethod
+    def update_user(user_id, data):
+        user = db.session.get(User, user_id)
+        if not user:
+            return None, "User not found"
+        
+        if 'username' in data:
+            user.username = data['username']
+        if 'email' in data:
+            user.email = data['email']
+        
+        try:
+            db.session.commit() 
+            return user, None
+        except Exception as e:
+            db.session.rollback()
+            return None, str(e)
 
 #---------------------Expense--------------------
 
@@ -116,6 +137,88 @@ class DataManager:
         except Exception as e:
             db.session.rollback()
             return None, str(e)
+
+
+    @staticmethod
+    def get_user_expenses(user_id):
+        user = db.session.get(User, user_id)
+
+        if not user:
+            return None, "User not found"
+    
+        # Ausgaben des Users holen
+        expenses = user.expenses
+
+        # leere Liste für die Ergebnisse
+        results = []
+
+        for expense in user.expenses:
+            #Wörterbuch für jede einzelne Ausgabe
+            expense_data = {
+                "id": expense.id,
+                "amount": expense.amount,
+                "title": expense.title,
+                "category": expense.category,
+                "date": expense.date.strftime('%Y-%m-%d') # Datum schön formatieren
+            }
+            # Dieses Wörterbuch hängen wir an unsere Liste an
+            results.append(expense_data)
         
+        return results, None
 
 
+    @staticmethod
+    def get_expense_summary(user_id):
+        user = db.session.get(User, user_id)
+
+        if not user:
+            return None, "User not found"
+
+        category_totals = {}
+        total_expenses = 0
+
+        for expense in user.expenses:
+            cat = expense.category
+            amount = expense.amount
+            
+            total_expenses += amount
+
+            if cat in category_totals:
+                # Kategorie existiert schon -> addieren
+                category_totals[cat] += amount
+            else:
+                # Kategorie ist neu -> anlegen
+                category_totals[cat] = amount #auf die Kategorie cat im Dictionary category_totals zugreifen und
+                #den Betrag addieren
+
+        return {"total amount": total_expenses, "by category": category_totals}, None
+
+
+#---------------------Token--------------------
+    # @staticmethod 
+    # def create_tokens(user_id):
+    #     access_token = jwt.encode(
+    #         {"user_id": user_id, "exp": datetime.utcnow() + timedelta(minutes=15)},
+    #         os.getenv('SECRET_KEY'),
+    #         algorithm="HS256"
+    #     )
+    #     refresh_token = jwt.encode(
+    #         {"user_id": user_id, "exp": datetime.utcnow() + timedelta(days=7)},
+    #         os.getenv('SECRET_KEY'),
+    #         algorithm="HS256"
+    #     )
+        
+    #     try:
+    #         db_refresh_token = RefreshToken.generate(user_id) #legt eine Variable fest, die sagt, 
+    #         #erstell mir einen refresh token und wir geben ihr als parameter die user_id mit
+    #         db.session.add(db_refresh_token) #ey SQLAlchemy, merk dir dieses Objekt – ich möchte es gleich speichern
+    #         #add() = auf die Speicherliste setzen
+    #         db.session.commit() #commit() = wirklich in Neon schreiben
+            
+    #         return access_token, refresh_token, None
+        
+    #     except Exception as e:
+    #         db.session.rollback()
+    #         return None, None, str(e)
+
+        

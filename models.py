@@ -1,7 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-
+import secrets
+from datetime import datetime, timedelta
 
 db = SQLAlchemy()
 
@@ -12,6 +13,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(100), nullable=False, unique=True)
     expenses = db.relationship('Expense', backref='owner', lazy=True, cascade='all, delete-orphan')
+    is_verified = db.Column(db.Boolean, default=False) #für token
 
     def set_password(self, password):
         from werkzeug.security import generate_password_hash
@@ -30,3 +32,43 @@ class Expense(db.Model):
     date = db.Column(db.DateTime)
     title = db.Column(db.String(100), nullable=False) #muss ausgefüllt werden
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) #muss ausgefüllt werden
+
+
+class RefreshToken(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(255), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    expires_at = db.Column(db.Boolean, default=False) #sicherheit:token nur ein mal nutzbar
+
+    @staticmethod
+    def generate(user_id, days=7): #generate Funktion baut neuen Token
+        token = RefreshToken(
+            token=secrets.token_urlsafe(64),
+            user_id=user_id,
+            expires_at=datetime.utcnow() + timedelta(days=days)
+        )
+        return token
+    
+    def is_valid(self): #if true Token zugriff erlauben
+        return not self.is_used and self.expires_at > datetime.utcnow() 
+
+
+class EmailVerificationToken(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(255), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    is_used = db.Column(db.Boolean, default=False)
+
+    @staticmethod
+    def generate(user_id, hours=24):
+        token = EmailVerificationToken(
+            token=secrets.token_urlsafe(32),
+            user_id=user_id,
+            expires_at=datetime.utcnow() + timedelta(hours=hours)
+        )
+        return token
+    
+    def is_valid(self):
+        return not self.is_used and self.expires_at > datetime.utcnow()
+        
