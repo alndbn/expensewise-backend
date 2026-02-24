@@ -13,7 +13,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(100), nullable=False, unique=True)
     expenses = db.relationship('Expense', backref='owner', lazy=True, cascade='all, delete-orphan')
-    is_verified = db.Column(db.Boolean, default=False) #für token
+    #is_verified = db.Column(db.Boolean, default=False) #für token
 
     def set_password(self, password):
         from werkzeug.security import generate_password_hash
