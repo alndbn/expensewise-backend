@@ -59,7 +59,9 @@ class DataManager:
             user.username = data['username']
         if 'email' in data:
             user.email = data['email']
-        
+        if 'monthly_budget' in data:
+            user.monthly_budget = data['monthly_budget']
+
         try:
             db.session.commit() 
             return user, None
@@ -85,7 +87,9 @@ class DataManager:
             amount=data.get('amount'),
             user_id = data.get('user_id'),
             description=data.get('description'),
-            category=category_input
+            category=category_input,
+            is_recurring=data.get('is_recurring', False),
+            recurring_interval=('recurring_interval')
         )
 
         try:
@@ -130,7 +134,11 @@ class DataManager:
             expense.category = data['category']
         if 'description' in data:
             expense.description = data['description']
-        
+        if 'is_recurring' in data:
+            expense.is_recurring = data['is_recurring']
+        if 'recurring_interval' in data:
+            expense.recurring_interval = data['recurring_interval']
+
         try:
             db.session.commit() #alles speichern
             return expense, None

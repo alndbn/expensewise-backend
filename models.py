@@ -13,7 +13,9 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(100), nullable=False, unique=True)
     expenses = db.relationship('Expense', backref='owner', lazy=True, cascade='all, delete-orphan')
+    monthly_budget = db.Column(db.Float, nullable=True)
     #is_verified = db.Column(db.Boolean, default=False) #für token
+
 
     def set_password(self, password):
         from werkzeug.security import generate_password_hash
@@ -32,7 +34,8 @@ class Expense(db.Model):
     date = db.Column(db.DateTime)
     title = db.Column(db.String(100), nullable=False) #muss ausgefüllt werden
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) #muss ausgefüllt werden
-
+    is_recurring = db.Column(db.Boolean, default=False)
+    recurring_interval = db.Column(db.String(50), nullable=True)
 
 class RefreshToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
