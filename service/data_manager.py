@@ -139,6 +139,7 @@ class DataManager:
         if 'recurring_interval' in data:
             expense.recurring_interval = data['recurring_interval']
 
+
         try:
             db.session.commit() #alles speichern
             return expense, None
@@ -167,7 +168,7 @@ class DataManager:
                 "amount": expense.amount,
                 "title": expense.title,
                 "category": expense.category,
-                "date": expense.date.strftime('%Y-%m-%d') # Datum schön formatieren
+                "date": expense.date.strftime('%Y-%m-%d') if expense.date else None
             }
             # Dieses Wörterbuch hängen wir an unsere Liste an
             results.append(expense_data)
@@ -203,30 +204,31 @@ class DataManager:
 
 
 #---------------------Token--------------------
-    # @staticmethod 
-    # def create_tokens(user_id):
-    #     access_token = jwt.encode(
-    #         {"user_id": user_id, "exp": datetime.utcnow() + timedelta(minutes=15)},
-    #         os.getenv('SECRET_KEY'),
-    #         algorithm="HS256"
-    #     )
-    #     refresh_token = jwt.encode(
-    #         {"user_id": user_id, "exp": datetime.utcnow() + timedelta(days=7)},
-    #         os.getenv('SECRET_KEY'),
-    #         algorithm="HS256"
-    #     )
+    @staticmethod 
+    def create_tokens(user_id):
+        access_token = jwt.encode(
+            {"user_id": user_id, "exp": datetime.utcnow() + timedelta(minutes=15)},
+            os.getenv('SECRET_KEY'),
+            algorithm="HS256"
+        )
+        refresh_token = jwt.encode(
+            {"user_id": user_id, "exp": datetime.utcnow() + timedelta(days=7)},
+            os.getenv('SECRET_KEY'),
+            algorithm="HS256"
+        )
+        return access_token
         
-    #     try:
-    #         db_refresh_token = RefreshToken.generate(user_id) #legt eine Variable fest, die sagt, 
-    #         #erstell mir einen refresh token und wir geben ihr als parameter die user_id mit
-    #         db.session.add(db_refresh_token) #ey SQLAlchemy, merk dir dieses Objekt – ich möchte es gleich speichern
-    #         #add() = auf die Speicherliste setzen
-    #         db.session.commit() #commit() = wirklich in Neon schreiben
+        try:
+            db_refresh_token = RefreshToken.generate(user_id) #legt eine Variable fest, die sagt, 
+            #erstell mir einen refresh token und wir geben ihr als parameter die user_id mit
+            db.session.add(db_refresh_token) #ey SQLAlchemy, merk dir dieses Objekt – ich möchte es gleich speichern
+            #add() = auf die Speicherliste setzen
+            db.session.commit() #commit() = wirklich in Neon schreiben
             
-    #         return access_token, refresh_token, None
+            return access_token, refresh_token, None
         
-    #     except Exception as e:
-    #         db.session.rollback()
-    #         return None, None, str(e)
+        except Exception as e:
+            db.session.rollback()
+            return None, None, str(e)
 
         

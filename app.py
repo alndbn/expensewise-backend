@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from service.data_manager import DataManager
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
-#from flask_jwt_extended import create_access_token, JWTManager
+from flask_jwt_extended import create_access_token, JWTManager, jwt_required, get_jwt_identity
 
 
 load_dotenv() #lädt Variablen aus einer Textdatei mit dem Namen .env, brauche die Verbimdung
@@ -14,11 +14,14 @@ load_dotenv() #lädt Variablen aus einer Textdatei mit dem Namen .env, brauche d
 
 app = Flask(__name__) #start engine
 
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # 👈 zuerst!
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config["JWT_SECRET_KEY"] = "super-secret"
+app.config["JWT_SECRET_KEY"] = "mein-sehr-langer-geheimer-schluessel-abc-123456"
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_DOMAIN'] = False
 
 login_manager = LoginManager(app)
 
@@ -29,11 +32,11 @@ def load_user(user_id):
 db.init_app(app) #Datenbank wird mit App verbunden
 
 # erlauben explizit dem React-Frontend den Zugriff
-CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
 
 
-#jwt = JWTManager(app)
+jwt = JWTManager(app)
 
 
 
@@ -50,7 +53,7 @@ def index():
 
 
 @app.route('/users/<int:user_id>', methods=['PUT'])
-@login_required
+@jwt_required()
 def update_user(user_id):
     data = request.get_json()
     user, error = DataManager.update_user(user_id, data)
@@ -60,7 +63,7 @@ def update_user(user_id):
 
 
 @app.route('/users/<int:user_id>', methods=['DELETE'])
-@login_required
+@jwt_required()
 def delete_user(user_id):
     #app.py fragt Manager: "Lösch mal bitte User X"
     success, error = DataManager.delete_user(user_id)
@@ -102,8 +105,10 @@ def register():
         "email": user.email
     }), 201
 
+
 @app.route('/login', methods=['POST'])
 def login():
+    #print('heeeeeeeeeeeeeeeeello')
     data = request.get_json()
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({"error": "Missing email or password"}), 400
@@ -113,29 +118,39 @@ def login():
 
     if user and user.check_password(data.get('password')):
         login_user(user)
-        # access_token, refresh_token, error = DataManager.create_tokens(user.id)
-
-        # if error:
-        #     return jsonify({"error": error}), 500
         
+        access_token = create_access_token(identity=str(user.id))
+
         response = jsonify({
             "message": "login successful",
+            "access_token":  access_token,
             "user": {
                 "id": user.id,
                 "username": user.username
             }
         })
-        # response.set_cookie('access_token', access_token, httponly=True)
-        # response.set_cookie('refresh_token', refresh_token, httponly=True)
+    # set_cookie Zeile LÖSCHEN
         return response, 200
-    
     return jsonify({"error": "Invalid credentials"}), 401
 
 
-#----------------------------table expense---------------------------------------------------------------
+@app.route('/me', methods=['GET'])
+@jwt_required()
+def me():
+    user_id = get_jwt_identity()
+    user = db.session.get(User, user_id)
+    return jsonify({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "monthly_budget": user.monthly_budget
+    })
+
+
+#----------------------------tableexpense-----------------------------------------------
 
 @app.route('/expenses', methods=['POST'])
-@login_required
+@jwt_required()
 def create_expense():
     data = request.get_json()
     expense, error = DataManager.create_expense(data)
@@ -147,7 +162,7 @@ def create_expense():
 
 
 @app.route('/expenses/<int:expense_id>', methods=['PUT'])
-@login_required
+@jwt_required()
 def update_expense(expense_id):
     data = request.get_json() #daten aus postman holen
 
@@ -160,7 +175,7 @@ def update_expense(expense_id):
 
 
 @app.route('/expenses/<int:expense_id>', methods=['DELETE'])
-@login_required
+@jwt_required()
 def delete_expense(expense_id):
     success, error = DataManager.delete_expense(expense_id)
 
@@ -171,7 +186,7 @@ def delete_expense(expense_id):
 
 
 @app.route('/expenses/user/<int:user_id>', methods=['GET'])
-@login_required
+@jwt_required()
 def get_user_expenses(user_id):
     expenses, error = DataManager.get_user_expenses(user_id)
 
@@ -182,13 +197,25 @@ def get_user_expenses(user_id):
 
 
 @app.route('/expenses/user/<int:user_id>/summary', methods=['GET'])
-@login_required
+@jwt_required()
 def get_expense_summary(user_id):
     expense, error = DataManager.get_expense_summary(user_id)
 
     if error:
         return jsonify({"error": error}), 404
+    
     return jsonify(expense), 200
+
+
+@app.route('/users/<user_id>', methods=['GET'])
+@jwt_required()
+def budget(user_id):
+    user = db.session.get(User, user_id)
+
+    if not user:
+        return jsonify({"message": "User not found"})
+    
+    return jsonify({"monthly_budget": user.monthly_budget}), 200
 
 
 if __name__ == "__main__": #startet das programm nur dann, wenn ich app.py aufrufe

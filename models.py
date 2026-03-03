@@ -37,6 +37,7 @@ class Expense(db.Model):
     is_recurring = db.Column(db.Boolean, default=False)
     recurring_interval = db.Column(db.String(50), nullable=True)
 
+
 class RefreshToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(255), unique=True, nullable=False)
