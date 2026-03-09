@@ -138,6 +138,7 @@ def login():
 @jwt_required()
 def me():
     user_id = get_jwt_identity()
+    print(user_id)
     user = db.session.get(User, user_id)
     return jsonify({
         "id": user.id,
@@ -145,7 +146,6 @@ def me():
         "email": user.email,
         "monthly_budget": user.monthly_budget
     })
-
 
 #----------------------------tableexpense-----------------------------------------------
 

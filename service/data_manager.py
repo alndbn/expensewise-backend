@@ -218,17 +218,5 @@ class DataManager:
         )
         return access_token
         
-        try:
-            db_refresh_token = RefreshToken.generate(user_id) #legt eine Variable fest, die sagt, 
-            #erstell mir einen refresh token und wir geben ihr als parameter die user_id mit
-            db.session.add(db_refresh_token) #ey SQLAlchemy, merk dir dieses Objekt – ich möchte es gleich speichern
-            #add() = auf die Speicherliste setzen
-            db.session.commit() #commit() = wirklich in Neon schreiben
-            
-            return access_token, refresh_token, None
-        
-        except Exception as e:
-            db.session.rollback()
-            return None, None, str(e)
 
         
