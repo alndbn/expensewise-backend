@@ -89,7 +89,8 @@ class DataManager:
             description=data.get('description'),
             category=category_input,
             is_recurring=data.get('is_recurring', False),
-            recurring_interval=('recurring_interval')
+            recurring_interval=('recurring_interval'),
+            date=data.get('date'),
         )
 
         try:
