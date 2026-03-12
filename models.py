@@ -14,6 +14,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), nullable=False, unique=True)
     expenses = db.relationship('Expense', backref='owner', lazy=True, cascade='all, delete-orphan')
     monthly_budget = db.Column(db.Float, nullable=True)
+    saving_goals = db.relationship('SavingGoal', backref='owner', lazy=True, cascade='all, delete-orphan')
     #is_verified = db.Column(db.Boolean, default=False) #für token
 
 
@@ -36,6 +37,15 @@ class Expense(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) #muss ausgefüllt werden
     is_recurring = db.Column(db.Boolean, default=False)
     recurring_interval = db.Column(db.String(50), nullable=True)
+
+
+class SavingGoal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String, nullable=False)
+    target_amount = db.Column(db.Float, nullable=False)
+    current_amount = db.Column(db.Float, nullable=False, default=0)
+    deadline = db.Column(db.DateTime, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
 class RefreshToken(db.Model):

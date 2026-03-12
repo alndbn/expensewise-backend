@@ -1,4 +1,4 @@
-from models import db, User, Expense
+from models import db, User, Expense, SavingGoal
 from werkzeug.security import generate_password_hash
 import jwt
 from datetime import datetime, timedelta
@@ -220,4 +220,72 @@ class DataManager:
         return access_token
         
 
+ #---------------------SavingGoal-------------        
+
+    @staticmethod
+    def create_saving_goal(data):
+        if not data.get('title') or data.get('target_amount') is None:
+            return None, "Title and Saving Amount are mandatory fields!"
         
+        new_goal = SavingGoal(
+            title=data.get('title'),
+            target_amount=data.get('target_amount'),
+            current_amount=data.get('current_amount', 0),
+            deadline=data.get('deadline'),
+            user_id=data.get('user_id')
+        )
+        
+        try:
+            db.session.add(new_goal)
+            db.session.commit()
+            return new_goal.id, None
+        except Exception as e:
+            db.session.rollback()
+            return None, str(e)
+
+
+    @staticmethod
+    def get_saving_goal(user_id):
+        user = db.session.get(User, user_id)
+
+        if not user:
+            return None, "User not found"
+
+        results = []
+
+        for savings in user.saving_goals:
+            savings_data = {
+                "id": savings.id,
+                "title": savings.title,
+                "target_amount": savings.target_amount,
+                "current_amount": savings.current_amount,
+                "deadline": savings.deadline
+            }
+            results.append(savings_data)
+        
+        return results, None
+    
+
+    @staticmethod
+    def update_saving_goal(saving_id, data):
+        savings = db.session.get(SavingGoal, saving_id)
+        if not savings:
+            return None, "Savings not found"
+        
+        if 'title' in data:
+            savings.title = data['title']
+        if 'target_amount' in data:
+            savings.target_amount = data['target_amount']
+        if 'current_amount' in data:
+            savings.current_amount = data['current_amount']
+        if 'deadline' in data:
+            savings.deadline = data['deadline']
+
+        try:
+            db.session.commit()
+            return savings, None
+        except Exception as e:
+            db.session.rollback()
+            return None, str(e)
+
+

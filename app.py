@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template #anfragen aus dem internet verstehen
 from flask_cors import CORS
-from models import db, User, Expense, RefreshToken, EmailVerificationToken #verbindung zum datenbank-bauplan in models.py
+from models import db, User, Expense, RefreshToken, EmailVerificationToken, SavingGoal #verbindung zum datenbank-bauplan in models.py
 import os
 from dotenv import load_dotenv
 from service.data_manager import DataManager
@@ -41,11 +41,11 @@ jwt = JWTManager(app)
 
 
 with app.app_context():
-    db.create_all() #app schaut in models.py und baut User und Expense Tabellen
+    db.create_all() #app schaut in models.py und legt alle Tabellen an
 
 
 
-#-----------------------------Table User----------------------------------------------------------------
+#-----------------------------TableUser-----------------------------------------------------
 
 @app.route('/') #ruft jemand die website mit / auf, wird die Funktion ausgeführt
 def index():
@@ -218,6 +218,40 @@ def budget(user_id):
     return jsonify({"monthly_budget": user.monthly_budget}), 200
 
 
+#---------------------tableSavingGoal------------- 
+
+@app.route('/saving-goals', methods=['POST']) #erstellen
+@jwt_required()
+def create_saving_goal():
+    data = request.get_json()
+    saving_goal, error = DataManager.create_saving_goal(data)
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify({"message": "Saving Goal created"}), 201
+
+
+@app.route('/saving-goals/users/<user_id>', methods=['GET']) #abrufen
+@jwt_required()
+def get_saving_goal(user_id):
+    saving_goal, error = DataManager.get_saving_goal(user_id)
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify(saving_goal), 200
+
+
+@app.route('/saving-goals/<goal_id>', methods=['PUT']) #updaten
+@jwt_required()
+def update_saving_goal(goal_id):
+    data = request.get_json()
+    saving_goal, error = DataManager.update_saving_goal(goal_id, data)
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify({"message": "Saving Goal successfully updated"}), 200
+
+
+
+
+
 if __name__ == "__main__": #startet das programm nur dann, wenn ich app.py aufrufe
     with app.app_context():
     # Das hier erstellt die Tabellen automatisch, falls sie fehlen
@@ -228,7 +262,9 @@ if __name__ == "__main__": #startet das programm nur dann, wenn ich app.py aufru
 
 
 
-#----------------------------table RefreshToken/table EmailVerificationToken---------------------------------------------------------------
+
+
+#---------------------tableRefreshTokentableEmailVerificationToken------------- 
 
 # @app.route('/verify/<token>', methods=['GET'])
 # def verify_email(token):
@@ -256,3 +292,4 @@ if __name__ == "__main__": #startet das programm nur dann, wenn ich app.py aufru
 #     response.set_cookie('access_token', access_token, httponly=True)
 #     response.set_cookie('refresh_token', refresh_token, httponly=True)
 #     return response, 200
+
