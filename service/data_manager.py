@@ -27,7 +27,8 @@ class DataManager:
             return new_user, None
         except Exception as e:
             db.session.rollback()
-            return None, str(e)
+            print(str(e))
+            return None, "Something went wrong"
 
 
     @staticmethod
@@ -46,7 +47,8 @@ class DataManager:
             return True, None
         except Exception as e:
             db.session.rollback()
-            return False, str(e)
+            print(str(e))
+            return False, "Something went wrong"
         
 
     @staticmethod
@@ -67,7 +69,8 @@ class DataManager:
             return user, None
         except Exception as e:
             db.session.rollback()
-            return None, str(e)
+            print(str(e))
+            return None, "Something went wrong"
 
 #---------------------Expense--------------------
 
@@ -99,7 +102,8 @@ class DataManager:
             return new_exp, None
         except Exception as e:
             db.session.rollback()
-            return None, str(e)
+            print(str(e))
+            return None, "Something went wrong"
         
 
     @staticmethod
@@ -116,7 +120,8 @@ class DataManager:
             return True, None
         except Exception as e:
             db.session.rollback()
-            return False, str(e)
+            print(str(e))
+            return False, "Something went wrong"
         
     @staticmethod
     def update_expense(expense_id, data):
@@ -146,7 +151,8 @@ class DataManager:
             return expense, None
         except Exception as e:
             db.session.rollback()
-            return None, str(e)
+            print(str(e))
+            return None, "Something went wrong"
 
 
     @staticmethod
@@ -241,7 +247,8 @@ class DataManager:
             return new_goal.id, None
         except Exception as e:
             db.session.rollback()
-            return None, str(e)
+            print(str(e))
+            return None, "Something went wrong"
 
 
     @staticmethod
@@ -259,7 +266,7 @@ class DataManager:
                 "title": savings.title,
                 "target_amount": savings.target_amount,
                 "current_amount": savings.current_amount,
-                "deadline": savings.deadline
+                "deadline": savings.deadline.strftime('%Y-%m-%d') if savings.deadline else None
             }
             results.append(savings_data)
         
@@ -286,6 +293,7 @@ class DataManager:
             return savings, None
         except Exception as e:
             db.session.rollback()
-            return None, str(e)
+            print(str(e))
+            return None, "Something went wrong"
 
 

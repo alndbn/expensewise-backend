@@ -251,7 +251,6 @@ def update_saving_goal(goal_id):
 
 
 
-
 if __name__ == "__main__": #startet das programm nur dann, wenn ich app.py aufrufe
     with app.app_context():
     # Das hier erstellt die Tabellen automatisch, falls sie fehlen
