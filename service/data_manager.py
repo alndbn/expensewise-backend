@@ -144,6 +144,8 @@ class DataManager:
             expense.is_recurring = data['is_recurring']
         if 'recurring_interval' in data:
             expense.recurring_interval = data['recurring_interval']
+        if 'date' in data:
+            expense.date = data['date']
 
 
         try:

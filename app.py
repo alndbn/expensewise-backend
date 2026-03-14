@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from service.data_manager import DataManager
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from flask_jwt_extended import create_access_token, JWTManager, jwt_required, get_jwt_identity
-
+from datetime import timedelta
 
 load_dotenv() #lädt Variablen aus einer Textdatei mit dem Namen .env, brauche die Verbimdung
 #zur datenbank, möchte das Passwort aber nicht in Quelltext schreiben
@@ -22,6 +22,7 @@ app.config["JWT_SECRET_KEY"] = "mein-sehr-langer-geheimer-schluessel-abc-123456"
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_DOMAIN'] = False
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=24)
 
 login_manager = LoginManager(app)
 
@@ -140,6 +141,10 @@ def me():
     user_id = get_jwt_identity()
     print(user_id)
     user = db.session.get(User, user_id)
+
+    if not user:
+        return jsonify({"error": "User not existing"}), 404
+
     return jsonify({
         "id": user.id,
         "username": user.username,
@@ -147,12 +152,15 @@ def me():
         "monthly_budget": user.monthly_budget
     })
 
+
 #----------------------------tableexpense-----------------------------------------------
 
 @app.route('/expenses', methods=['POST'])
 @jwt_required()
 def create_expense():
+    user_id = get_jwt_identity() #id aus token holen
     data = request.get_json()
+    data['user_id'] = user_id #id in daten einfügen
     expense, error = DataManager.create_expense(data)
 
     if not expense: 
@@ -223,7 +231,9 @@ def budget(user_id):
 @app.route('/saving-goals', methods=['POST']) #erstellen
 @jwt_required()
 def create_saving_goal():
+    user_id = get_jwt_identity()
     data = request.get_json()
+    data['user_id'] = user_id
     saving_goal, error = DataManager.create_saving_goal(data)
     if error:
         return jsonify({"error": error}), 400
