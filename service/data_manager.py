@@ -209,8 +209,8 @@ class DataManager:
                 category_totals[cat] = amount #auf die Kategorie cat im Dictionary category_totals zugreifen und
                 #den Betrag addieren
 
-        return {"total amount": total_expenses, "by category": category_totals}, None
-
+        return {"total_amount": total_expenses, "by_category": category_totals}, None
+        
 
 #---------------------Token--------------------
     @staticmethod 
@@ -231,7 +231,7 @@ class DataManager:
  #---------------------SavingGoal-------------        
 
     @staticmethod
-    def create_saving_goal(data):
+    def create_saving_goal(user_id, data):
         if not data.get('title') or data.get('target_amount') is None:
             return None, "Title and Saving Amount are mandatory fields!"
         
@@ -240,7 +240,7 @@ class DataManager:
             target_amount=data.get('target_amount'),
             current_amount=data.get('current_amount', 0),
             deadline=data.get('deadline'),
-            user_id=data.get('user_id')
+            user_id=user_id
         )
         
         try:
@@ -276,10 +276,12 @@ class DataManager:
     
 
     @staticmethod
-    def update_saving_goal(saving_id, data):
-        savings = db.session.get(SavingGoal, saving_id)
+    def update_saving_goal(goal_id, user_id, data):
+        savings = db.session.get(SavingGoal, goal_id)
         if not savings:
             return None, "Savings not found"
+        if savings.user_id != int(user_id):
+            return None, "Unauthorized"
         
         if 'title' in data:
             savings.title = data['title']

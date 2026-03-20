@@ -53,7 +53,7 @@ def index():
     return jsonify({"message": "ExpenseWise API is running"}), 200
 
 
-@app.route('/users/<int:user_id>', methods=['PUT'])
+@app.route('/api/users/<int:user_id>', methods=['PUT'])
 @jwt_required()
 def update_user(user_id):
     data = request.get_json()
@@ -63,7 +63,7 @@ def update_user(user_id):
     return jsonify({"message": "User successfully updated"}), 200
 
 
-@app.route('/users/<int:user_id>', methods=['DELETE'])
+@app.route('/api/users/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):
     #app.py fragt Manager: "Lösch mal bitte User X"
@@ -75,7 +75,7 @@ def delete_user(user_id):
     return jsonify({"message": f"User {user_id} successfully deleted."}), 200
 
 
-@app.route('/register', methods=['POST'])
+@app.route('/api/register', methods=['POST'])
 def register():
     #holen uns die JSON-Daten aus dem "Paket", das React geschickt hat
     data = request.get_json()
@@ -107,7 +107,7 @@ def register():
     }), 201
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/api/login', methods=['POST'])
 def login():
     #print('heeeeeeeeeeeeeeeeello')
     data = request.get_json()
@@ -127,7 +127,8 @@ def login():
             "access_token":  access_token,
             "user": {
                 "id": user.id,
-                "username": user.username
+                "username": user.username,
+                "monthly_budget": user.monthly_budget
             }
         })
     # set_cookie Zeile LÖSCHEN
@@ -135,7 +136,7 @@ def login():
     return jsonify({"error": "Invalid credentials"}), 401
 
 
-@app.route('/me', methods=['GET'])
+@app.route('/api/me', methods=['GET'])
 @jwt_required()
 def me():
     user_id = get_jwt_identity()
@@ -155,7 +156,7 @@ def me():
 
 #----------------------------tableexpense-----------------------------------------------
 
-@app.route('/expenses', methods=['POST'])
+@app.route('/api/expenses', methods=['POST'])
 @jwt_required()
 def create_expense():
     user_id = get_jwt_identity() #id aus token holen
@@ -169,7 +170,7 @@ def create_expense():
     return jsonify({"message": "Expense successful created"}), 201
 
 
-@app.route('/expenses/<int:expense_id>', methods=['PUT'])
+@app.route('/api/expenses/<int:expense_id>', methods=['PUT'])
 @jwt_required()
 def update_expense(expense_id):
     data = request.get_json() #daten aus postman holen
@@ -182,7 +183,7 @@ def update_expense(expense_id):
     return jsonify({"message": "Updated successfully."}), 200
 
 
-@app.route('/expenses/<int:expense_id>', methods=['DELETE'])
+@app.route('/api/expenses/<int:expense_id>', methods=['DELETE'])
 @jwt_required()
 def delete_expense(expense_id):
     success, error = DataManager.delete_expense(expense_id)
@@ -193,7 +194,7 @@ def delete_expense(expense_id):
     return jsonify({"message": "Expense successful deleted"}), 200
 
 
-@app.route('/expenses/user/<int:user_id>', methods=['GET'])
+@app.route('/api/expenses/user/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user_expenses(user_id):
     expenses, error = DataManager.get_user_expenses(user_id)
@@ -204,7 +205,7 @@ def get_user_expenses(user_id):
     return jsonify(expenses), 200
 
 
-@app.route('/expenses/user/<int:user_id>/summary', methods=['GET'])
+@app.route('/api/expenses/user/<int:user_id>/summary', methods=['GET'])
 @jwt_required()
 def get_expense_summary(user_id):
     expense, error = DataManager.get_expense_summary(user_id)
@@ -215,7 +216,7 @@ def get_expense_summary(user_id):
     return jsonify(expense), 200
 
 
-@app.route('/users/<user_id>', methods=['GET'])
+@app.route('/api/users/<user_id>', methods=['GET'])
 @jwt_required()
 def budget(user_id):
     user = db.session.get(User, user_id)
@@ -228,32 +229,36 @@ def budget(user_id):
 
 #---------------------tableSavingGoal------------- 
 
-@app.route('/saving-goals', methods=['POST']) #erstellen
+@app.route('/api/saving-goals', methods=['POST']) #erstellen
 @jwt_required()
 def create_saving_goal():
     user_id = get_jwt_identity()
     data = request.get_json()
-    data['user_id'] = user_id
-    saving_goal, error = DataManager.create_saving_goal(data)
+    #data['user_id'] = user_id
+
+    saving_goal, error = DataManager.create_saving_goal(user_id, data)
     if error:
         return jsonify({"error": error}), 400
     return jsonify({"message": "Saving Goal created"}), 201
 
 
-@app.route('/saving-goals/users/<user_id>', methods=['GET']) #abrufen
+@app.route('/api/saving-goals/users', methods=['GET']) #abrufen
 @jwt_required()
-def get_saving_goal(user_id):
+def get_saving_goal():
+    user_id = get_jwt_identity()
     saving_goal, error = DataManager.get_saving_goal(user_id)
     if error:
         return jsonify({"error": error}), 400
+    
     return jsonify(saving_goal), 200
 
 
-@app.route('/saving-goals/<goal_id>', methods=['PUT']) #updaten
+@app.route('/api/saving-goals/<goal_id>', methods=['PUT']) #updaten
 @jwt_required()
 def update_saving_goal(goal_id):
+    user_id = get_jwt_identity()
     data = request.get_json()
-    saving_goal, error = DataManager.update_saving_goal(goal_id, data)
+    saving_goal, error = DataManager.update_saving_goal(goal_id, user_id, data)
     if error:
         return jsonify({"error": error}), 400
     return jsonify({"message": "Saving Goal successfully updated"}), 200
@@ -302,3 +307,5 @@ if __name__ == "__main__": #startet das programm nur dann, wenn ich app.py aufru
 #     response.set_cookie('refresh_token', refresh_token, httponly=True)
 #     return response, 200
 
+
+   
