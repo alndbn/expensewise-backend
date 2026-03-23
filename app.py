@@ -48,14 +48,15 @@ with app.app_context():
 
 #-----------------------------TableUser-----------------------------------------------------
 
-@app.route('/') #ruft jemand die website mit / auf, wird die Funktion ausgeführt
+@app.route('/api/') #ruft jemand die website mit / auf, wird die Funktion ausgeführt
 def index():
     return jsonify({"message": "ExpenseWise API is running"}), 200
 
 
-@app.route('/api/users/<int:user_id>', methods=['PUT'])
+@app.route('/api/users', methods=['PUT'])
 @jwt_required()
-def update_user(user_id):
+def update_user():
+    user_id = get_jwt_identity()
     data = request.get_json()
     user, error = DataManager.update_user(user_id, data)
     if error:
@@ -63,10 +64,10 @@ def update_user(user_id):
     return jsonify({"message": "User successfully updated"}), 200
 
 
-@app.route('/api/users/<int:user_id>', methods=['DELETE'])
+@app.route('/api/users', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):
-    #app.py fragt Manager: "Lösch mal bitte User X"
+    user_id = get_jwt_identity()
     success, error = DataManager.delete_user(user_id)
 
     if not success:
@@ -194,9 +195,10 @@ def delete_expense(expense_id):
     return jsonify({"message": "Expense successful deleted"}), 200
 
 
-@app.route('/api/expenses/user/<int:user_id>', methods=['GET'])
+@app.route('/api/expenses/user', methods=['GET'])
 @jwt_required()
-def get_user_expenses(user_id):
+def get_user_expenses():
+    user_id = get_jwt_identity()
     expenses, error = DataManager.get_user_expenses(user_id)
 
     if error:
@@ -205,9 +207,10 @@ def get_user_expenses(user_id):
     return jsonify(expenses), 200
 
 
-@app.route('/api/expenses/user/<int:user_id>/summary', methods=['GET'])
+@app.route('/api/expenses/user/summary', methods=['GET'])
 @jwt_required()
-def get_expense_summary(user_id):
+def get_expense_summary():
+    user_id = get_jwt_identity()
     expense, error = DataManager.get_expense_summary(user_id)
 
     if error:
@@ -234,9 +237,10 @@ def budget(user_id):
 def create_saving_goal():
     user_id = get_jwt_identity()
     data = request.get_json()
+    data['user_id'] = user_id
     #data['user_id'] = user_id
 
-    saving_goal, error = DataManager.create_saving_goal(user_id, data)
+    saving_goal, error = DataManager.create_saving_goal(data)
     if error:
         return jsonify({"error": error}), 400
     return jsonify({"message": "Saving Goal created"}), 201
@@ -258,7 +262,7 @@ def get_saving_goal():
 def update_saving_goal(goal_id):
     user_id = get_jwt_identity()
     data = request.get_json()
-    saving_goal, error = DataManager.update_saving_goal(goal_id, user_id, data)
+    saving_goal, error = DataManager.update_saving_goal(goal_id, data)
     if error:
         return jsonify({"error": error}), 400
     return jsonify({"message": "Saving Goal successfully updated"}), 200
