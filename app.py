@@ -262,7 +262,7 @@ def get_saving_goal():
 def update_saving_goal(goal_id):
     user_id = get_jwt_identity()
     data = request.get_json()
-    saving_goal, error = DataManager.update_saving_goal(goal_id, data)
+    saving_goal, error = DataManager.update_saving_goal(goal_id, user_id, data)
     if error:
         return jsonify({"error": error}), 400
     return jsonify({"message": "Saving Goal successfully updated"}), 200
