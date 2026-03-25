@@ -4,4 +4,7 @@
 dist/
 instance/
 __pycache__/
-*.pyc
+*.pycscript.js
+Chart.min.js
+package.json
+package-lock.json
