@@ -35,11 +35,7 @@ db.init_app(app) #Datenbank wird mit App verbunden
 # erlauben explizit dem React-Frontend den Zugriff
 CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
-
-
 jwt = JWTManager(app)
-
-
 
 with app.app_context():
     db.create_all() #app schaut in models.py und legt alle Tabellen an
@@ -110,7 +106,6 @@ def register():
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    #print('heeeeeeeeeeeeeeeeello')
     data = request.get_json()
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({"error": "Missing email or password"}), 400
@@ -132,7 +127,6 @@ def login():
                 "monthly_budget": user.monthly_budget
             }
         })
-    # set_cookie Zeile LÖSCHEN
         return response, 200
     return jsonify({"error": "Invalid credentials"}), 401
 
@@ -155,7 +149,7 @@ def me():
     })
 
 
-#----------------------------tableexpense-----------------------------------------------
+#----------------------------tableExpense-----------------------------------------------
 
 @app.route('/api/expenses', methods=['POST'])
 @jwt_required()
