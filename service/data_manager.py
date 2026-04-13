@@ -107,12 +107,14 @@ class DataManager:
         
 
     @staticmethod
-    def delete_expense(expense_id):
+    def delete_expense(expense_id, user_id):
         #die einzelnen Ausgaben suchen
         expense= db.session.get(Expense, expense_id)
 
         if not expense:
             return False, "Expense not found"
+        if expense.user_id != user_id:
+            return None, "No access"
         
         try:
             db.session.delete(expense)
@@ -124,11 +126,14 @@ class DataManager:
             return False, "Something went wrong"
         
     @staticmethod
-    def update_expense(expense_id, data):
+    def update_expense(expense_id, user_id, data):
         #ausgabe suchen
         expense = db.session.get(Expense, expense_id)
         if not expense:
             return None, "Expense not found"
+        if expense.user_id != user_id:
+            return None, "No access"
+
         
         # 2. prüfen, welche Felder im "data"-Paket stecken
         # .get() verhindert Abstürze, falls ein Feld fehlt
@@ -146,6 +151,9 @@ class DataManager:
             expense.recurring_interval = data['recurring_interval']
         if 'date' in data:
             expense.date = data['date']
+
+
+
 
 
         try:

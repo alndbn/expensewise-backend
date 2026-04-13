@@ -16,6 +16,7 @@ app = Flask(__name__) #start engine
 
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+#print("DB URL:", os.getenv('DATABASE_URL'))
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["JWT_SECRET_KEY"] = "mein-sehr-langer-geheimer-schluessel-abc-123456"
@@ -168,10 +169,13 @@ def create_expense():
 @app.route('/api/expenses/<int:expense_id>', methods=['PUT'])
 @jwt_required()
 def update_expense(expense_id):
+    user_id = get_jwt_identity()
     data = request.get_json() #daten aus postman holen
 
-    expense, error = DataManager.update_expense(expense_id, data)
+    expense, error = DataManager.update_expense(expense_id, int(user_id), data)
 
+    if error == "No access":
+        return jsonify({"error": error}), 403
     if error:
         return jsonify({"error": error}), 404
     
@@ -181,10 +185,15 @@ def update_expense(expense_id):
 @app.route('/api/expenses/<int:expense_id>', methods=['DELETE'])
 @jwt_required()
 def delete_expense(expense_id):
-    success, error = DataManager.delete_expense(expense_id)
+    user_id = get_jwt_identity()
 
+    success, error = DataManager.delete_expense(expense_id, int(user_id))
+
+    if error == "No access":
+        return jsonify({"error": error}), 403
     if not success:
         return jsonify({"error": error}), 404
+
     
     return jsonify({"message": "Expense successful deleted"}), 200
 
@@ -260,6 +269,27 @@ def update_saving_goal(goal_id):
     if error:
         return jsonify({"error": error}), 400
     return jsonify({"message": "Saving Goal successfully updated"}), 200
+
+
+#---------------------tableReceipts------------- 
+#erstellen
+#@app.route('/api/receipts', methods=['POST'])
+#@jwt_required()
+#def create_receipt():
+    #user_id = get_jwt_identity()
+    #data = request.get_json()
+    #data['user_id'] = user_id
+
+    #receipt, error = DataManager.create_receipt(data)
+    #if error: 
+        #return jsonify({"error": error}), 400
+    #return jsonify({"message": "Receipt created"}), 201
+
+#abrufen 
+#@app.route('/api/receipts', methods=['GET'])
+
+#löschen 
+#@app.route('/api/receipts/<receipt_id>', methods=['DELETE'])
 
 
 

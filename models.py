@@ -85,4 +85,12 @@ class EmailVerificationToken(db.Model):
     
     def is_valid(self):
         return not self.is_used and self.expires_at > datetime.utcnow()
+
+#class Receipts(db.Model):
+    #id = db.Column(db.Integer, primary_key=True)
+    #date = db.Column(db.DateTime)
+    #amount = db.Column(db.Float)
+    #shop = db.Column(db.String(200))
+    #category = db.Column(db.String(250))
+    #user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
         
