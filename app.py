@@ -8,8 +8,7 @@ from flask_login import LoginManager, login_required, login_user, logout_user, c
 from flask_jwt_extended import create_access_token, JWTManager, jwt_required, get_jwt_identity
 from datetime import timedelta
 
-load_dotenv() #lädt Variablen aus einer Textdatei mit dem Namen .env, brauche die Verbimdung
-#zur datenbank, möchte das Passwort aber nicht in Quelltext schreiben
+load_dotenv() 
 
 
 app = Flask(__name__) #start engine
@@ -271,6 +270,18 @@ def update_saving_goal(goal_id):
     return jsonify({"message": "Saving Goal successfully updated"}), 200
 
 
+
+
+
+if __name__ == "__main__": #startet das programm nur dann, wenn ich app.py aufrufe
+    with app.app_context():
+    # Das hier erstellt die Tabellen automatisch, falls sie fehlen
+        db.create_all()
+        print("Tabellen in Neon wurden erfolgreich angelegt!")
+    app.run(debug=True) #Startet die App + wenn ich etwas ändere/speicher startet f
+        #lask automatisch den server neu + gibt im browser detailierte Fehlermeldung aus
+
+
 #---------------------tableReceipts------------- 
 #erstellen
 #@app.route('/api/receipts', methods=['POST'])
@@ -294,13 +305,6 @@ def update_saving_goal(goal_id):
 
 
 
-if __name__ == "__main__": #startet das programm nur dann, wenn ich app.py aufrufe
-    with app.app_context():
-    # Das hier erstellt die Tabellen automatisch, falls sie fehlen
-        db.create_all()
-        print("Tabellen in Neon wurden erfolgreich angelegt!")
-    app.run(debug=True) #Startet die App + wenn ich etwas ändere/speicher startet f
-        #lask automatisch den server neu + gibt im browser detailierte Fehlermeldung aus
 
 
 
