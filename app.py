@@ -234,15 +234,12 @@ def budget(user_id):
 
 #---------------------tableSavingGoal------------- 
 
-@app.route('/api/saving-goals', methods=['POST']) #erstellen
+@app.route('/api/saving-goals', methods=['POST'])
 @jwt_required()
 def create_saving_goal():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity()) 
     data = request.get_json()
-    data['user_id'] = user_id
-    #data['user_id'] = user_id
-
-    saving_goal, error = DataManager.create_saving_goal(data)
+    saving_goal, error = DataManager.create_saving_goal(user_id, data)
     if error:
         return jsonify({"error": error}), 400
     return jsonify({"message": "Saving Goal created"}), 201
