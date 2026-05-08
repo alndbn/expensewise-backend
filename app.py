@@ -93,7 +93,8 @@ def register():
         "id": user.id,
         "username": user.username,
         "email": user.email,
-        "access_token": access_token   
+        "monthly_budget": user.monthly_budget,  
+        "access_token": access_token
     }), 201
 
 @app.route('/api/login', methods=['POST'])
