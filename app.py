@@ -74,35 +74,27 @@ def delete_user(user_id):
 
 @app.route('/api/register', methods=['POST'])
 def register():
-    #holen uns die JSON-Daten aus dem "Paket", das React geschickt hat
     data = request.get_json()
-    #check: prüfen, ob alle drei Felder (Username, Email, Passwort) 
-    # im Paket enthalten sind. Wenn eines fehlt, brechen wir sofort ab.
     if not data.get("username") or not data.get("email") or not data.get("password"):
-        #400: client hat was falsch gemacht
         return jsonify({"error": "Username, email and password are required"}), 400
     
-    #schicken die Daten an 'DataManager'. 
-    #kümmert sich darum, den User in der Neon-Datenbank anzulegen
     user, error = DataManager.create_user(
         data["username"],
         data["email"],
         data["password"]
     )
-    #falls der DataManager einen Fehler meldet (z.B. Email existiert schon),
-    #schicken wir diesen Fehler direkt zurück an das Frontend.
     if error:
         return jsonify({"error": error}), 400
 
-    #wenn erfolg: schicken eine Bestätigung zurück
-    # 201 Created' - etwas Neues wurde erfolgreich erschaffen
+    access_token = create_access_token(identity=str(user.id)) 
+
     return jsonify({
         "message": "User registered successfully",
         "id": user.id,
         "username": user.username,
-        "email": user.email
+        "email": user.email,
+        "access_token": access_token   
     }), 201
-
 
 @app.route('/api/login', methods=['POST'])
 def login():
