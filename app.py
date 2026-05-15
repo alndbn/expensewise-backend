@@ -33,7 +33,7 @@ def load_user(user_id):
 db.init_app(app) #Datenbank wird mit App verbunden
 
 # erlauben explizit dem React-Frontend den Zugriff
-CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "https://expensewise-frontend.vercel.app"]}}, supports_credentials=True)
 
 jwt = JWTManager(app)
 
