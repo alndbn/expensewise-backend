@@ -62,8 +62,8 @@ def update_user():
 
 @app.route('/api/users', methods=['DELETE'])
 @jwt_required()
-def delete_user(user_id):
-    user_id = get_jwt_identity()
+def delete_user():
+    user_id = int(get_jwt_identity())
     success, error = DataManager.delete_user(user_id)
 
     if not success:
@@ -140,7 +140,6 @@ def me():
         "email": user.email,
         "monthly_budget": user.monthly_budget
     })
-
 
 #----------------------------tableExpense-----------------------------------------------
 
