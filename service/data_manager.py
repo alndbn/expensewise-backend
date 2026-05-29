@@ -1,4 +1,4 @@
-from models import db, User, Expense, SavingGoal
+from models import db, User, Expense, SavingGoal, Category
 from werkzeug.security import generate_password_hash
 import jwt
 from datetime import datetime, timedelta
@@ -309,3 +309,61 @@ class DataManager:
             return None, "Something went wrong"
 
 
+#----------------------Categories--------------------------------
+
+    @staticmethod
+    def create_category(user_id, data):
+        if not data.get('title'):
+            return None, "Category is a mandatory fields!"
+        
+        new_category = Category(
+            title=data.get('title'),
+            user_id=user_id
+        )
+        
+        try:
+            db.session.add(new_category)
+            db.session.commit()
+            return new_category.id, None
+        except Exception as e:
+            db.session.rollback()
+            print(str(e))
+            return None, "Something went wrong"
+        
+    
+    @staticmethod
+    def get_category(user_id):
+        user = db.session.get(User, user_id)
+
+        if not user:
+            return None, "User not found"
+
+        results = []
+
+        for category in user.categories:
+            categories_data = {
+                "id": category.id,
+                "title": category.title,
+            }
+            results.append(categories_data)
+        
+        return results, None
+    
+    @staticmethod
+    def delete_category(category_id, user_id):
+        category = db.session.get(Category, category_id)
+
+        if not category:
+            return False, "Category not found"
+        if category.user_id != user_id:
+            return None, "No access"
+        
+        try:
+            db.session.delete(category)
+            db.session.commit()
+            return True, None
+        except Exception as e:
+            db.session.rollback()
+            print(str(e))
+            return False, "Something went wrong"
+        

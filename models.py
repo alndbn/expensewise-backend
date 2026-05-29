@@ -15,6 +15,7 @@ class User(UserMixin, db.Model):
     expenses = db.relationship('Expense', backref='owner', lazy=True, cascade='all, delete-orphan')
     monthly_budget = db.Column(db.Float, nullable=True)
     saving_goals = db.relationship('SavingGoal', backref='owner', lazy=True, cascade='all, delete-orphan')
+    categories = db.relationship('Category', backref='owner', lazy=True, cascade='all, delete-orphan')
     #is_verified = db.Column(db.Boolean, default=False) #für token
 
 
@@ -45,6 +46,12 @@ class SavingGoal(db.Model):
     target_amount = db.Column(db.Float, nullable=False)
     current_amount = db.Column(db.Float, nullable=False, default=0)
     deadline = db.Column(db.DateTime, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 

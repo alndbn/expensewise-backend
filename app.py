@@ -259,6 +259,47 @@ def update_saving_goal(goal_id):
     return jsonify({"message": "Saving Goal successfully updated"}), 200
 
 
+#------------------TableCategory---------------------
+
+@app.route('/api/categories', methods=['POST'])
+@jwt_required()
+def create_category():
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    data['user_id'] = user_id 
+    expense, error = DataManager.create_category(user_id, data)
+
+    if not expense: 
+        return jsonify({"error": error}), 400
+    
+    return jsonify({"message": "Category successful created"}), 201
+
+
+@app.route('/api/categories', methods=['GET']) 
+@jwt_required()
+def get_categories():
+    user_id = get_jwt_identity()
+    categories, error = DataManager.get_category(int(user_id))
+    if error:
+        return jsonify({"error": error}), 400
+    
+    return jsonify(categories), 200
+
+
+@app.route('/api/categories/<category_id>', methods=['DELETE'])
+@jwt_required()
+def delete_category(category_id):
+    user_id = get_jwt_identity()
+
+    success, error = DataManager.delete_category(int(category_id), int(user_id))
+
+    if error == "No access":
+        return jsonify({"error": error}), 403
+    if not success:
+        return jsonify({"error": error}), 404
+
+    
+    return jsonify({"message": "Category successful deleted"}), 200
 
 
 
@@ -269,6 +310,12 @@ if __name__ == "__main__": #startet das programm nur dann, wenn ich app.py aufru
         print("Tabellen in Neon wurden erfolgreich angelegt!")
     app.run(debug=True) #Startet die App + wenn ich etwas ändere/speicher startet f
         #lask automatisch den server neu + gibt im browser detailierte Fehlermeldung aus
+
+
+
+
+
+
 
 
 #---------------------tableReceipts------------- 
