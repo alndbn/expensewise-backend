@@ -3,6 +3,9 @@ from werkzeug.security import generate_password_hash
 import jwt
 from datetime import datetime, timedelta
 import os
+import requests
+
+
 
 #---------------------User------------------
 
@@ -63,6 +66,8 @@ class DataManager:
             user.email = data['email']
         if 'monthly_budget' in data:
             user.monthly_budget = data['monthly_budget']
+        if 'base_currency' in data:
+            user.base_currency = data['base_currency']
 
         try:
             db.session.commit() 
@@ -72,10 +77,19 @@ class DataManager:
             print(str(e))
             return None, "Something went wrong"
 
+
+#---------------------Currency------------------
+    @staticmethod
+    def get_exchange_rate(base_currency, currency):
+        API_KEY = os.getenv('EXCHANGE_RATE_API_KEY')
+        response = requests.get(f"https://v6.exchangerate-api.com/v6/{API_KEY}/pair/{base_currency}/{currency}")
+        data = response.json()
+        return data['conversion_rate']
+
 #---------------------Expense--------------------
 
     @staticmethod
-    def create_expense(data): # Wir nehmen nur noch das Paket 'data' an
+    def create_expense(data, user_id): # Wir nehmen nur noch das Paket 'data' an
     # 1. Schritt: Validierung 
         if not data.get('title') or data.get('amount') is None:
             return None, "Title and Amount are mandatory fields!"
@@ -84,16 +98,27 @@ class DataManager:
         if not category_input or category_input.strip() == "":
             category_input = "Other"
 
+        user = db.session.get(User, user_id)
+        rate = DataManager.get_exchange_rate(user.base_currency, data.get('currency'))
+        amount_base = float(data.get('amount')) * rate
+
+        print("currency:", data.get('currency'))
+        print("base_currency:", user.base_currency)
+        print("rate:", rate)
+        print("amount_base:", amount_base)
+
         # 2. Schritt: Das Objekt bauen
         new_exp = Expense(
             title=data.get('title'),
             amount=data.get('amount'),
-            user_id = data.get('user_id'),
+            user_id=user_id,
             description=data.get('description'),
             category=category_input,
             is_recurring=data.get('is_recurring', False),
-            recurring_interval=('recurring_interval'),
+            recurring_interval=data.get('recurring_interval'),
             date=data.get('date'),
+            currency=data.get('currency'),
+            amount_base=amount_base
         )
 
         try:
@@ -185,7 +210,8 @@ class DataManager:
                 "amount": expense.amount,
                 "title": expense.title,
                 "category": expense.category,
-                "date": expense.date.strftime('%Y-%m-%d') if expense.date else None
+                "date": expense.date.strftime('%Y-%m-%d') if expense.date else None,
+                "currency": expense.currency,
             }
             # Dieses Wörterbuch hängen wir an unsere Liste an
             results.append(expense_data)
@@ -207,14 +233,14 @@ class DataManager:
             cat = expense.category
             amount = expense.amount
             
-            total_expenses += amount
+            total_expenses += expense.amount_base if expense.amount_base is not None else expense.amount
 
             if cat in category_totals:
                 # Kategorie existiert schon -> addieren
-                category_totals[cat] += amount
+                category_totals[cat] += expense.amount_base if expense.amount_base is not None else expense.amount
             else:
                 # Kategorie ist neu -> anlegen
-                category_totals[cat] = amount #auf die Kategorie cat im Dictionary category_totals zugreifen und
+                category_totals[cat] = expense.amount_base if expense.amount_base is not None else expense.amount #auf die Kategorie cat im Dictionary category_totals zugreifen und
                 #den Betrag addieren
 
         return {"total_amount": total_expenses, "by_category": category_totals}, None

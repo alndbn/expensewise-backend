@@ -17,6 +17,7 @@ class User(UserMixin, db.Model):
     saving_goals = db.relationship('SavingGoal', backref='owner', lazy=True, cascade='all, delete-orphan')
     categories = db.relationship('Category', backref='owner', lazy=True, cascade='all, delete-orphan')
     #is_verified = db.Column(db.Boolean, default=False) #für token
+    base_currency = db.Column(db.String(3), nullable=True, default="EUR")
 
 
     def set_password(self, password):
@@ -38,6 +39,8 @@ class Expense(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) #muss ausgefüllt werden
     is_recurring = db.Column(db.Boolean, default=False)
     recurring_interval = db.Column(db.String(50), nullable=True)
+    currency = db.Column(db.String(3), nullable=True, default="EUR")
+    amount_base = db.Column(db.Float, nullable=True)
 
 
 class SavingGoal(db.Model):

@@ -33,7 +33,7 @@ def load_user(user_id):
 db.init_app(app) #Datenbank wird mit App verbunden
 
 # erlauben explizit dem React-Frontend den Zugriff
-CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "https://expensewise-frontend.vercel.app"]}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://localhost:5174", "https://expensewise-frontend.vercel.app"]}}, supports_credentials=True)
 
 jwt = JWTManager(app)
 
@@ -129,27 +129,37 @@ def login():
 def me():
     user_id = get_jwt_identity()
     print(user_id)
-    user = db.session.get(User, user_id)
+    user = db.session.get(User, int(user_id))
 
     if not user:
         return jsonify({"error": "User not existing"}), 404
+
+    rate = DataManager.get_exchange_rate("EUR", user.base_currency)
+    if user.monthly_budget is not None:
+        converted_budget = user.monthly_budget * rate
+    else:
+        converted_budget = None
+    print("base_currency:", user.base_currency)
+    print("rate:", rate)
+    print("converted_budget:", converted_budget)
 
     return jsonify({
         "id": user.id,
         "username": user.username,
         "email": user.email,
-        "monthly_budget": user.monthly_budget
+        "monthly_budget": converted_budget,
+        "base_currency": user.base_currency
     })
+    
 
 #----------------------------tableExpense-----------------------------------------------
 
 @app.route('/api/expenses', methods=['POST'])
 @jwt_required()
 def create_expense():
-    user_id = get_jwt_identity() #id aus token holen
+    user_id = int(get_jwt_identity()) #id aus token holen
     data = request.get_json()
-    data['user_id'] = user_id #id in daten einfügen
-    expense, error = DataManager.create_expense(data)
+    expense, error = DataManager.create_expense(data, user_id)
 
     if not expense: 
         return jsonify({"error": error}), 400
