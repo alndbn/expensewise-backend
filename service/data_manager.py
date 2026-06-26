@@ -212,6 +212,7 @@ class DataManager:
                 "category": expense.category,
                 "date": expense.date.strftime('%Y-%m-%d') if expense.date else None,
                 "currency": expense.currency,
+                "amount_base": expense.amount_base,
             }
             # Dieses Wörterbuch hängen wir an unsere Liste an
             results.append(expense_data)

@@ -117,7 +117,8 @@ def login():
             "user": {
                 "id": user.id,
                 "username": user.username,
-                "monthly_budget": user.monthly_budget
+                "monthly_budget": user.monthly_budget,
+                "base_currency": user.base_currency
             }
         })
         return response, 200
