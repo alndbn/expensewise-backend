@@ -8,3 +8,4 @@ __pycache__/
 Chart.min.js
 package.json
 package-lock.json
+venv/
