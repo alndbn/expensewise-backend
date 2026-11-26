@@ -224,16 +224,6 @@ def get_expense_summary():
     return jsonify(expense), 200
 
 
-@app.route('/api/users/<user_id>', methods=['GET'])
-@jwt_required()
-def budget(user_id):
-    user = db.session.get(User, user_id)
-
-    if not user:
-        return jsonify({"message": "User not found"})
-    
-    return jsonify({"monthly_budget": user.monthly_budget}), 200
-
 
 #---------------------tableSavingGoal------------- 
 
